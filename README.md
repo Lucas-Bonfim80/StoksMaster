@@ -167,3 +167,7 @@ npm --prefix frontend run build
 - O nome visual da aplicacao e `Stocks Master`.
 - Cada produto pertence a uma loja e so e acessivel por usuarios daquela loja.
 - O token de sessao fica no navegador com a chave `stoksmaster_token`.
+PS C:\Users\lucas\OneDrive\Documentos\sla> git push -u origin main(Set-ExecutionPolicy -Scope Process -ExecutionPolicy RemoteSigned) ; (& C:\Users\lucas\Envs\sql_model\Scripts\Activate.ps1)
+error: src refspec main does not match any
+error: failed to push some refs to 'https://github.com/Lucas-Bonfim80/StoksMaster.git'
+(sql_model) PS C:\Users\lucas\OneDrive\Documentos\sla> 

@@ -14,7 +14,7 @@ const emptyForm = {
 
 const categories = ['Bebidas', 'Alimentos', 'Limpeza', 'Higiene', 'Eletrônicos', 'Roupas', 'Casa', 'Pets', 'Outros']
 
-function CategorySelect({ value, onChange }) {
+function CategorySelect({ value, onChange, options = categories }) {
   const [isOpen, setIsOpen] = useState(false)
   const [openUpward, setOpenUpward] = useState(false)
   const selectRef = useRef(null)
@@ -44,7 +44,7 @@ function CategorySelect({ value, onChange }) {
       </button>
       {isOpen && (
         <div className={`category-options ${openUpward ? 'category-options-upward' : ''}`} role="listbox">
-          {categories.map((category) => (
+          {options.map((category) => (
             <button type="button" role="option" aria-selected={category === value} className={`category-option ${category === value ? 'category-option-selected' : ''}`} key={category} onClick={() => { onChange({ target: { name: 'category', value: category } }); setIsOpen(false) }}>
               {category}
             </button>
@@ -278,6 +278,7 @@ function App() {
   const [storeName, setStoreName] = useState('Minha loja')
   const [products, setProducts] = useState([])
   const [search, setSearch] = useState('')
+  const [categoryFilter, setCategoryFilter] = useState('Todas as categorias')
   const [form, setForm] = useState(emptyForm)
   const [isProductModalOpen, setIsProductModalOpen] = useState(false)
   const [editingProduct, setEditingProduct] = useState(null)
@@ -408,8 +409,9 @@ function App() {
 
   const filteredProducts = products.filter((product) => {
     const term = search.trim().toLowerCase()
-    if (!term) return true
-    return [product.name, product.category, String(product.id)].some((value) => value?.toLowerCase().includes(term))
+    const matchesCategory = categoryFilter === 'Todas as categorias' || product.category === categoryFilter
+    const matchesSearch = !term || [product.name, product.category, String(product.id)].some((value) => value?.toLowerCase().includes(term))
+    return matchesCategory && matchesSearch
   })
 
   const openDeleteModal = (product) => {
@@ -472,6 +474,12 @@ function App() {
           <div className="table-toolbar">
             <label htmlFor="product-search">Pesquisar produtos</label>
             <input id="product-search" type="search" placeholder="Nome, categoria ou ID" value={search} onChange={(event) => setSearch(event.target.value)} />
+            <label htmlFor="category-filter">Categoria</label>
+            <CategorySelect
+              value={categoryFilter}
+              options={['Todas as categorias', ...categories]}
+              onChange={(event) => setCategoryFilter(event.target.value)}
+            />
           </div>
           {loading ? (
             <p className="empty-state">Carregando...</p>
@@ -488,8 +496,8 @@ function App() {
                     <th>Produto</th>
                     <th>ID</th>
                     <th>Categoria</th>
-                    <th>Qtd</th>
-                    <th>Preço Venda</th>
+                    <th>Quantidade</th>
+                    <th>Valor</th>
                     <th>Ações</th>
                   </tr>
                 </thead>
