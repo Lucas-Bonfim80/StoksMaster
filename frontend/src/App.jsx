@@ -277,8 +277,6 @@ function App() {
   const [authPage, setAuthPage] = useState(() => window.location.pathname === '/cadastro' ? 'register' : 'login')
   const [storeName, setStoreName] = useState('Minha loja')
   const [products, setProducts] = useState([])
-  const [search, setSearch] = useState('')
-  const [categoryFilter, setCategoryFilter] = useState('Todas as categorias')
   const [form, setForm] = useState(emptyForm)
   const [isProductModalOpen, setIsProductModalOpen] = useState(false)
   const [editingProduct, setEditingProduct] = useState(null)
@@ -407,13 +405,6 @@ function App() {
     }
   }
 
-  const filteredProducts = products.filter((product) => {
-    const term = search.trim().toLowerCase()
-    const matchesCategory = categoryFilter === 'Todas as categorias' || product.category === categoryFilter
-    const matchesSearch = !term || [product.name, product.category, String(product.id)].some((value) => value?.toLowerCase().includes(term))
-    return matchesCategory && matchesSearch
-  })
-
   const openDeleteModal = (product) => {
     setDeleteError('')
     setProductToDelete(product)
@@ -471,22 +462,10 @@ function App() {
           <button type="button" className="new-product-button" onClick={openNewProductModal}>+ Novo produto</button>
         </div>
         <section className="list-card">
-          <div className="table-toolbar">
-            <label htmlFor="product-search">Pesquisar produtos</label>
-            <input id="product-search" type="search" placeholder="Nome, categoria ou ID" value={search} onChange={(event) => setSearch(event.target.value)} />
-            <label htmlFor="category-filter">Categoria</label>
-            <CategorySelect
-              value={categoryFilter}
-              options={['Todas as categorias', ...categories]}
-              onChange={(event) => setCategoryFilter(event.target.value)}
-            />
-          </div>
           {loading ? (
             <p className="empty-state">Carregando...</p>
           ) : products.length === 0 ? (
             <p className="empty-state">Nenhum produto cadastrado.</p>
-          ) : filteredProducts.length === 0 ? (
-            <p className="empty-state">Nenhum produto encontrado.</p>
           ) : (
             <div className="table-scroll">
               <table className="product-table">
@@ -502,7 +481,7 @@ function App() {
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredProducts.map((product) => {
+                  {products.map((product) => {
                     return (
                       <tr key={product.id}>
                         <td>

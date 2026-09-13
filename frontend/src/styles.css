@@ -447,49 +447,9 @@ button:disabled {
   overflow: hidden;
 }
 
-.list-card:has(.category-options) {
-  overflow: visible;
-}
-
 .empty-state {
   margin: 0;
   padding: 28px 24px;
-}
-
-.table-toolbar {
-  position: relative;
-  z-index: 2;
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 14px;
-  padding: 16px 18px;
-  border-bottom: 1px solid rgba(148, 163, 184, 0.13);
-}
-
-.table-toolbar label {
-  color: #cbd5e1;
-  font-size: 0.95rem;
-  font-weight: 700;
-}
-
-.table-toolbar input {
-  width: min(100%, 280px);
-  padding: 10px 12px;
-}
-
-.table-toolbar .category-select {
-  width: min(100%, 220px);
-}
-
-.table-toolbar .category-select-trigger {
-  padding: 10px 12px;
-  font-size: 0.95rem;
-}
-
-.table-toolbar .category-options {
-  max-height: none;
-  overflow: visible;
 }
 
 .table-scroll {
