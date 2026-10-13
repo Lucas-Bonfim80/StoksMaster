@@ -1,8 +1,9 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import axios from 'axios'
 
 const API_URL = 'http://localhost:8000'
 const TOKEN_KEY = 'stoksmaster_token'
+const ITEMS_PER_PAGE = 6
 
 const emptyForm = {
   name: '',
@@ -40,7 +41,6 @@ function CategorySelect({ value, onChange, options = categories }) {
     <div className="category-select" ref={selectRef}>
       <button type="button" className="category-select-trigger" onClick={toggleOptions} aria-haspopup="listbox" aria-expanded={isOpen}>
         <span>{value}</span>
-        <span className={`category-chevron ${isOpen ? 'category-chevron-open' : ''}`}>⌄</span>
       </button>
       {isOpen && (
         <div className={`category-options ${openUpward ? 'category-options-upward' : ''}`} role="listbox">
@@ -284,6 +284,57 @@ function App() {
   const [deleteLoading, setDeleteLoading] = useState(false)
   const [deleteError, setDeleteError] = useState('')
   const [loading, setLoading] = useState(true)
+  const [searchTerm, setSearchTerm] = useState('')
+  const [categoryFilter, setCategoryFilter] = useState('Todas as categorias')
+  const [sortConfig, setSortConfig] = useState({ key: 'id', direction: 'desc' })
+  const [currentPage, setCurrentPage] = useState(1)
+
+  const filterOptions = ['Todas as categorias', ...categories]
+
+  const filteredProducts = products.filter((product) => {
+    const term = searchTerm.trim().toLowerCase()
+    const matchesCategory = categoryFilter === 'Todas as categorias' || product.category === categoryFilter
+    const matchesSearch = !term || [String(product.id), product.name, product.category].some((value) =>
+      String(value).toLowerCase().includes(term),
+    )
+
+    return matchesCategory && matchesSearch
+  })
+
+  const sortedProducts = useMemo(() => {
+    const sortableProducts = [...filteredProducts]
+
+    sortableProducts.sort((firstProduct, secondProduct) => {
+      const isAscending = sortConfig.direction === 'asc' ? 1 : -1
+
+      if (sortConfig.key === 'name' || sortConfig.key === 'category') {
+        return String(firstProduct[sortConfig.key]).localeCompare(String(secondProduct[sortConfig.key]), 'pt-BR', {
+          numeric: true,
+          sensitivity: 'base',
+        }) * isAscending
+      }
+
+      return (Number(firstProduct[sortConfig.key]) - Number(secondProduct[sortConfig.key])) * isAscending
+    })
+
+    return sortableProducts
+  }, [filteredProducts, sortConfig])
+
+  const totalPages = Math.max(1, Math.ceil(sortedProducts.length / ITEMS_PER_PAGE))
+  const paginatedProducts = sortedProducts.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE,
+  )
+
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [searchTerm, categoryFilter])
+
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages)
+    }
+  }, [currentPage, totalPages])
 
   const fetchProducts = async () => {
     try {
@@ -375,6 +426,30 @@ function App() {
     }))
   }
 
+  const handleSearchChange = (event) => {
+    setSearchTerm(event.target.value)
+  }
+
+  const handleCategoryFilterChange = (event) => {
+    setCategoryFilter(event.target.value)
+  }
+
+  const handleSort = (key) => {
+    setSortConfig((currentConfig) => {
+      if (currentConfig.key === key) {
+        return {
+          key,
+          direction: currentConfig.direction === 'asc' ? 'desc' : 'asc',
+        }
+      }
+
+      return {
+        key,
+        direction: ['name', 'category'].includes(key) ? 'asc' : 'desc',
+      }
+    })
+  }
+
   const handleSubmit = async (event) => {
     event.preventDefault()
 
@@ -459,6 +534,24 @@ function App() {
       </header>
       <div className="panel">
         <div className="product-toolbar">
+          <div className="table-toolbar">
+            <label htmlFor="product-search" className="table-toolbar-label">Pesquisar</label>
+            <input
+              id="product-search"
+              type="search"
+              placeholder="Nome, categoria ou ID"
+              value={searchTerm}
+              onChange={handleSearchChange}
+            />
+
+            <label htmlFor="category-filter" className="table-toolbar-label">Categoria</label>
+            <CategorySelect
+              value={categoryFilter}
+              onChange={handleCategoryFilterChange}
+              options={filterOptions}
+            />
+          </div>
+
           <button type="button" className="new-product-button" onClick={openNewProductModal}>+ Novo produto</button>
         </div>
         <section className="list-card">
@@ -466,22 +559,44 @@ function App() {
             <p className="empty-state">Carregando...</p>
           ) : products.length === 0 ? (
             <p className="empty-state">Nenhum produto cadastrado.</p>
+          ) : filteredProducts.length === 0 ? (
+            <p className="empty-state">Nenhum produto encontrado com os filtros atuais.</p>
           ) : (
             <div className="table-scroll">
               <table className="product-table">
                 <thead>
                   <tr>
                     <th>Imagem</th>
-                    <th>Produto</th>
-                    <th>ID</th>
-                    <th>Categoria</th>
-                    <th>Quantidade</th>
-                    <th>Valor</th>
+                    <th>
+                      <button type="button" className="sortable-header" onClick={() => handleSort('name')}>
+                        Produto {sortConfig.key === 'name' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}
+                      </button>
+                    </th>
+                    <th>
+                      <button type="button" className="sortable-header" onClick={() => handleSort('id')}>
+                        ID {sortConfig.key === 'id' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}
+                      </button>
+                    </th>
+                    <th>
+                      <button type="button" className="sortable-header" onClick={() => handleSort('category')}>
+                        Categoria {sortConfig.key === 'category' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}
+                      </button>
+                    </th>
+                    <th>
+                      <button type="button" className="sortable-header" onClick={() => handleSort('quantity')}>
+                        Quantidade {sortConfig.key === 'quantity' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}
+                      </button>
+                    </th>
+                    <th>
+                      <button type="button" className="sortable-header" onClick={() => handleSort('price')}>
+                        Valor {sortConfig.key === 'price' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}
+                      </button>
+                    </th>
                     <th>Ações</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {products.map((product) => {
+                  {paginatedProducts.map((product) => {
                     return (
                       <tr key={product.id}>
                         <td>
@@ -512,6 +627,21 @@ function App() {
                   })}
                 </tbody>
               </table>
+            </div>
+          )}
+
+          {totalPages > 1 && (
+            <div className="table-pagination" aria-label="Paginação de produtos">
+              {Array.from({ length: totalPages }, (_, index) => index + 1).map((page) => (
+                <button
+                  key={page}
+                  type="button"
+                  className={`page-tab ${page === currentPage ? 'is-active' : ''}`}
+                  onClick={() => setCurrentPage(page)}
+                >
+                  {page}
+                </button>
+              ))}
             </div>
           )}
         </section>
