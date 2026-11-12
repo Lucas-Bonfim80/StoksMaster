@@ -68,6 +68,7 @@ function Login({ onLogin, onRegister }) {
   const [form, setForm] = useState({ email: '', password: '' })
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
 
   const handleChange = (event) => {
     const { name, value } = event.target
@@ -111,16 +112,31 @@ function Login({ onLogin, onRegister }) {
           />
 
           <label htmlFor="password">Senha</label>
-          <input
-            id="password"
-            type="password"
-            name="password"
-            placeholder="Sua senha"
-            value={form.password}
-            onChange={handleChange}
-            autoComplete="current-password"
-            required
-          />
+          <div className="password-field">
+            <input
+              id="password"
+              type={showPassword ? 'text' : 'password'}
+              name="password"
+              placeholder="Sua senha"
+              value={form.password}
+              onChange={handleChange}
+              autoComplete="current-password"
+              required
+            />
+            <button
+              type="button"
+              className="password-visibility-toggle"
+              aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
+              aria-pressed={showPassword}
+              onClick={() => setShowPassword((visible) => !visible)}
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7Z" />
+                <circle cx="12" cy="12" r="3" />
+                {!showPassword && <path d="m4 4 16 16" />}
+              </svg>
+            </button>
+          </div>
 
           {error && <p className="form-error">{error}</p>}
           <button type="submit" disabled={loading}>
@@ -286,19 +302,26 @@ function App() {
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [categoryFilter, setCategoryFilter] = useState('Todas as categorias')
+  const [lowStockThreshold, setLowStockThreshold] = useState(5)
+  const [lowStockOnly, setLowStockOnly] = useState(false)
+  const [reportLoading, setReportLoading] = useState(false)
+  const [reportMessage, setReportMessage] = useState('')
+  const [reportError, setReportError] = useState('')
   const [sortConfig, setSortConfig] = useState({ key: 'id', direction: 'desc' })
   const [currentPage, setCurrentPage] = useState(1)
 
   const filterOptions = ['Todas as categorias', ...categories]
+  const lowStockProducts = products.filter((product) => Number(product.quantity) <= lowStockThreshold)
 
   const filteredProducts = products.filter((product) => {
     const term = searchTerm.trim().toLowerCase()
     const matchesCategory = categoryFilter === 'Todas as categorias' || product.category === categoryFilter
+    const matchesStockLevel = !lowStockOnly || Number(product.quantity) <= lowStockThreshold
     const matchesSearch = !term || [String(product.id), product.name, product.category].some((value) =>
       String(value).toLowerCase().includes(term),
     )
 
-    return matchesCategory && matchesSearch
+    return matchesCategory && matchesStockLevel && matchesSearch
   })
 
   const sortedProducts = useMemo(() => {
@@ -328,7 +351,7 @@ function App() {
 
   useEffect(() => {
     setCurrentPage(1)
-  }, [searchTerm, categoryFilter])
+  }, [searchTerm, categoryFilter, lowStockOnly, lowStockThreshold])
 
   useEffect(() => {
     if (currentPage > totalPages) {
@@ -432,6 +455,40 @@ function App() {
 
   const handleCategoryFilterChange = (event) => {
     setCategoryFilter(event.target.value)
+  }
+
+  const handleGenerateLowStockReport = async () => {
+    setReportLoading(true)
+    setReportMessage('')
+    setReportError('')
+
+    try {
+      const response = await axios.post(
+        `${API_URL}/products/low-stock/report`,
+        null,
+        {
+          params: { threshold: lowStockThreshold },
+          headers: { Authorization: `Bearer ${token}` },
+          responseType: 'blob',
+        },
+      )
+      const fileName = response.headers['content-disposition']?.match(/filename="?([^";]+)"?/i)?.[1]
+        || 'relatorio_estoque_baixo.csv'
+      const downloadUrl = window.URL.createObjectURL(new Blob([response.data], { type: 'text/csv;charset=utf-8' }))
+      const downloadLink = document.createElement('a')
+      downloadLink.href = downloadUrl
+      downloadLink.download = fileName
+      document.body.appendChild(downloadLink)
+      downloadLink.click()
+      downloadLink.remove()
+      window.setTimeout(() => window.URL.revokeObjectURL(downloadUrl), 1000)
+      setReportMessage('Relatório salvo no backend e baixado para o seu computador.')
+    } catch (error) {
+      console.error('Erro ao gerar relatório de estoque:', error)
+      setReportError('Não foi possível gerar o relatório de estoque.')
+    } finally {
+      setReportLoading(false)
+    }
   }
 
   const handleSort = (key) => {
@@ -554,6 +611,47 @@ function App() {
 
           <button type="button" className="new-product-button" onClick={openNewProductModal}>+ Novo produto</button>
         </div>
+        <section className={`stock-alert ${lowStockProducts.length > 0 ? 'stock-alert-warning' : 'stock-alert-ok'}`} aria-live="polite">
+          <div className="stock-alert-copy">
+            <span className="stock-alert-indicator" aria-hidden="true" />
+            <div>
+              <strong>{lowStockProducts.length > 0 ? `${lowStockProducts.length} ${lowStockProducts.length === 1 ? 'produto precisa' : 'produtos precisam'} de reposição` : 'Estoque em dia'}</strong>
+              <p>{lowStockProducts.length > 0 ? 'Itens no limite mínimo ou abaixo dele.' : 'Nenhum produto está abaixo do limite definido.'}</p>
+            </div>
+          </div>
+          <div className="stock-alert-controls">
+            <label htmlFor="low-stock-threshold">Alertar com até</label>
+            <input
+              id="low-stock-threshold"
+              type="number"
+              min="0"
+              value={lowStockThreshold}
+              onChange={(event) => setLowStockThreshold(Math.max(0, Number(event.target.value)))}
+            />
+            <span>unidades</span>
+            <button
+              type="button"
+              className="stock-filter-button"
+              onClick={() => setLowStockOnly((current) => !current)}
+              disabled={lowStockProducts.length === 0 && !lowStockOnly}
+            >
+              {lowStockOnly ? 'Ver todos' : 'Ver itens críticos'}
+            </button>
+            <button
+              type="button"
+              className="stock-filter-button"
+              onClick={handleGenerateLowStockReport}
+              disabled={reportLoading}
+            >
+              {reportLoading ? 'Gerando relatório...' : 'Gerar e baixar relatório'}
+            </button>
+          </div>
+        </section>
+        {(reportMessage || reportError) && (
+          <p className={reportError ? 'report-feedback report-feedback-error' : 'report-feedback'} role={reportError ? 'alert' : 'status'}>
+            {reportError || reportMessage}
+          </p>
+        )}
         <section className="list-card">
           {loading ? (
             <p className="empty-state">Carregando...</p>

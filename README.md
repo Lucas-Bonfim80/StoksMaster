@@ -80,6 +80,16 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 
 API: `http://localhost:8000`
 
+### Redefinir senha localmente
+
+Para redefinir a senha de uma conta sem entrar na aplicacao, execute no PowerShell a partir da raiz do projeto:
+
+```powershell
+.\backend\.venv\Scripts\python.exe .\backend\reset_password.py
+```
+
+O script solicita o e-mail da conta e a nova senha duas vezes. A senha nao aparece na tela e e armazenada usando bcrypt. Esta ferramenta exige acesso local ao projeto e ao banco de dados.
+
 ## Instalar e executar o frontend
 
 Em outro terminal:
@@ -124,9 +134,13 @@ Authorization: Bearer SEU_TOKEN
 | Metodo | Rota | Descricao |
 | --- | --- | --- |
 | GET | `/products/` | Lista produtos da loja atual |
+| GET | `/products/low-stock?threshold=5` | Lista produtos com quantidade menor ou igual ao limite informado |
+| POST | `/products/low-stock/report?threshold=5` | Gera e baixa um CSV dos produtos no limite ou abaixo dele |
 | POST | `/products/` | Cria produto |
 | PUT | `/products/{product_id}` | Atualiza produto |
 | DELETE | `/products/{product_id}` | Exclui produto |
+
+O relatório inclui o nome e a quantidade dos produtos, o limite escolhido e a data e hora da geração. Uma cópia fica salva em `backend/data/stock_reports`, e outra é baixada pelo navegador.
 
 Exemplo de produto:
 

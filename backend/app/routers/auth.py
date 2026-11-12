@@ -1,5 +1,8 @@
+import secrets
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
+from passlib.exc import UnknownHashError
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -9,6 +12,18 @@ from app.schemas.auth import TokenResponse, UserLogin, UserProfile, UserRegister
 from app.security import create_access_token, get_current_user, get_password_hash, verify_password
 
 router = APIRouter(prefix="/auth", tags=["auth"])
+
+
+def _verify_and_upgrade_password(db_user: User, password: str, db: Session) -> bool:
+    try:
+        return verify_password(password, db_user.hashed_password)
+    except UnknownHashError:
+        if not secrets.compare_digest(password, db_user.hashed_password):
+            return False
+
+        db_user.hashed_password = get_password_hash(password)
+        db.commit()
+        return True
 
 
 @router.post("/register", response_model=TokenResponse)
@@ -43,7 +58,7 @@ def register(user: UserRegister, db: Session = Depends(get_db)):
 @router.post("/login", response_model=TokenResponse)
 def login(user: UserLogin, db: Session = Depends(get_db)):
     db_user = db.query(User).filter(User.email == user.email).first()
-    if not db_user or not verify_password(user.password, db_user.hashed_password):
+    if not db_user or not _verify_and_upgrade_password(db_user, user.password, db):
         raise HTTPException(status_code=401, detail="Invalid email or password")
 
     token = create_access_token(db_user.email)
@@ -53,7 +68,7 @@ def login(user: UserLogin, db: Session = Depends(get_db)):
 @router.post("/login-form")
 def login_form(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     db_user = db.query(User).filter(User.email == form_data.username).first()
-    if not db_user or not verify_password(form_data.password, db_user.hashed_password):
+    if not db_user or not _verify_and_upgrade_password(db_user, form_data.password, db):
         raise HTTPException(status_code=401, detail="Invalid email or password")
 
     token = create_access_token(db_user.email)
