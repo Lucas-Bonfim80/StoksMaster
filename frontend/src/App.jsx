@@ -245,8 +245,8 @@ function ProductModal({ form, isEditing, onChange, onSubmit, onClose }) {
               <input id="product-price" type="number" name="price" placeholder="0,00" min="0.01" step="0.01" value={form.price} onChange={onChange} required />
             </div>
             <div className="form-field">
-              <label htmlFor="product-quantity">Quantidade</label>
-              <input id="product-quantity" type="number" name="quantity" placeholder="0" min="0" value={form.quantity} onChange={onChange} required />
+              <label htmlFor="product-quantity">{isEditing ? 'Quantidade (use + para movimentar)' : 'Quantidade inicial'}</label>
+              <input id="product-quantity" type="number" name="quantity" placeholder="0" min="0" value={form.quantity} onChange={onChange} required disabled={isEditing} />
             </div>
           </div>
 

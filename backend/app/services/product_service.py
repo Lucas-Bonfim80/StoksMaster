@@ -79,31 +79,14 @@ def update_product(db: Session, store_id: int, product_id: int, product: Product
     db_product = db.query(Product).filter(Product.id == product_id, Product.store_id == store_id).first()
     if db_product is None:
         return None
-    if quantity < 0 or (movement_type in ("entrada", "saida") and quantity == 0):
-        return False
 
-    quantity_before = db_product.quantity
     db_product.name = product.name
     db_product.image = product.image
     db_product.category = product.category
     db_product.price = product.price
-    db_product.quantity = product.quantity
 
     db.commit()
     db.refresh(db_product)
-    if quantity_before != db_product.quantity:
-        quantity_delta = db_product.quantity - quantity_before
-        db.add(StockMovement(
-            product_id=db_product.id,
-            product_name=db_product.name,
-            store_id=store_id,
-            movement_type="entrada" if quantity_delta > 0 else "ajuste",
-            quantity_delta=quantity_delta,
-            quantity_before=quantity_before,
-            quantity_after=db_product.quantity,
-            reason="Quantidade alterada na edição do produto",
-        ))
-        db.commit()
     return db_product
 
 

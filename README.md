@@ -13,6 +13,16 @@ Sistema de controle de estoque com autenticacao de usuarios, organizacao por loj
 - Imagens exibidas sem deformacao.
 - Interface responsiva.
 
+## Diagramas
+
+### Diagrama de casos de uso
+
+![Diagrama de casos de uso do StoksMaster](docs/diagrams/diagrama-de-casos-de-uso.svg)
+
+### Diagrama de classes
+
+![Diagrama de classes do StoksMaster](docs/diagrams/diagrama-de-classes.svg)
+
 ## Tecnologias
 
 - Backend: Python, FastAPI, Uvicorn, SQLAlchemy, MySQL e PyMySQL.
@@ -35,6 +45,10 @@ stoksmaster/
 │   │   └── main.py
 │   ├── .env
 │   └── requirements.txt
+├── docs/
+│   └── diagrams/
+│       ├── diagrama-de-casos-de-uso.svg
+│       └── diagrama-de-classes.svg
 ├── frontend/
 │   ├── src/
 │   │   ├── App.jsx
@@ -64,7 +78,7 @@ ALGORITHM=HS256
 ACCESS_TOKEN_EXPIRE_MINUTES=60
 ```
 
-Na primeira inicializacao, o backend cria automaticamente o banco `stoksMaster` e as tabelas `stores`, `users` e `products`.
+Na primeira inicializacao, o backend cria automaticamente o banco `stoksMaster` e as tabelas `stores`, `users`, `products` e `stock_movements`.
 
 Para ambientes reais, altere as credenciais e nunca compartilhe a `SECRET_KEY`.
 

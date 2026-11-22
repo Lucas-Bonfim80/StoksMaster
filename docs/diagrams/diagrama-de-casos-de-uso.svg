@@ -1,0 +1,84 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1500" height="1050" viewBox="0 0 1500 1050" role="img" aria-labelledby="title description">
+  <title id="title">Diagrama de casos de uso do StoksMaster</title>
+  <desc id="description">Casos de uso do lojista para autenticação, produtos, movimentações de estoque, alertas e relatórios.</desc>
+  <defs>
+    <style>
+      text { font-family: Inter, "Segoe UI", Arial, sans-serif; fill: #e5eefb; }
+      .title { font-size: 30px; font-weight: 700; }
+      .subtitle { font-size: 15px; fill: #a9bad3; }
+      .system-title { font-size: 21px; font-weight: 700; }
+      .actor-label { font-size: 16px; font-weight: 600; }
+      .usecase { fill: #172a43; stroke: #75a8e7; stroke-width: 1.6; }
+      .usecase-text { font-size: 15px; text-anchor: middle; }
+      .actor { stroke: #e5eefb; stroke-width: 3; fill: none; stroke-linecap: round; }
+      .association { stroke: #a9bad3; stroke-width: 1.6; fill: none; }
+      .include { stroke: #b7a5e8; stroke-width: 1.5; stroke-dasharray: 7 6; fill: none; }
+      .label { font-size: 12px; fill: #c8b9ec; }
+    </style>
+    <marker id="arrow" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto">
+      <path d="M0,0 L9,4.5 L0,9 Z" fill="#b7a5e8"/>
+    </marker>
+  </defs>
+  <rect width="1500" height="1050" fill="#0b1422"/>
+  <text class="title" x="56" y="58">StoksMaster · Diagrama de casos de uso</text>
+  <text class="subtitle" x="56" y="86">Ator principal: lojista · operações disponíveis após autenticação</text>
+
+  <rect x="285" y="120" width="1165" height="865" rx="20" fill="#0e1b2c" stroke="#45678f" stroke-width="2"/>
+  <text class="system-title" x="867" y="158" text-anchor="middle">StoksMaster</text>
+
+  <g class="actor" transform="translate(125 465)">
+    <circle cx="0" cy="0" r="18"/>
+    <path d="M0 18 L0 82 M-34 46 L34 46 M0 82 L-29 124 M0 82 L29 124"/>
+  </g>
+  <text class="actor-label" x="125" y="620" text-anchor="middle">Lojista</text>
+
+  <path class="association" d="M160 492 L370 255"/>
+  <path class="association" d="M160 500 L370 350"/>
+  <path class="association" d="M160 510 L370 470"/>
+  <path class="association" d="M160 518 L370 590"/>
+  <path class="association" d="M160 525 L370 710"/>
+  <path class="association" d="M160 530 L370 835"/>
+  <path class="association" d="M160 535 L940 255"/>
+  <path class="association" d="M160 540 L940 385"/>
+  <path class="association" d="M160 545 L940 515"/>
+  <path class="association" d="M160 550 L940 645"/>
+  <path class="association" d="M160 555 L940 775"/>
+  <path class="association" d="M160 560 L940 895"/>
+
+  <g>
+    <ellipse class="usecase" cx="490" cy="255" rx="120" ry="38"/>
+    <text class="usecase-text" x="490" y="261">Criar conta</text>
+    <ellipse class="usecase" cx="490" cy="350" rx="120" ry="38"/>
+    <text class="usecase-text" x="490" y="356">Fazer login</text>
+    <ellipse class="usecase" cx="490" cy="470" rx="120" ry="42"/>
+    <text class="usecase-text" x="490" y="476">Visualizar produtos</text>
+    <ellipse class="usecase" cx="490" cy="590" rx="120" ry="42"/>
+    <text class="usecase-text" x="490" y="596">Cadastrar produto</text>
+    <ellipse class="usecase" cx="490" cy="710" rx="120" ry="42"/>
+    <text class="usecase-text" x="490" y="716">Editar dados do produto</text>
+    <ellipse class="usecase" cx="490" cy="835" rx="120" ry="42"/>
+    <text class="usecase-text" x="490" y="841">Remover produto</text>
+
+    <ellipse class="usecase" cx="1060" cy="255" rx="145" ry="42"/>
+    <text class="usecase-text" x="1060" y="261">Fazer logout</text>
+    <ellipse class="usecase" cx="1060" cy="385" rx="145" ry="42"/>
+    <text class="usecase-text" x="1060" y="381">Registrar movimentação</text>
+    <text class="usecase-text" x="1060" y="401">(entrada, saída ou ajuste)</text>
+    <ellipse class="usecase" cx="1060" cy="515" rx="145" ry="42"/>
+    <text class="usecase-text" x="1060" y="521">Consultar histórico</text>
+    <ellipse class="usecase" cx="1060" cy="645" rx="145" ry="42"/>
+    <text class="usecase-text" x="1060" y="641">Configurar limite de</text>
+    <text class="usecase-text" x="1060" y="661">estoque baixo</text>
+    <ellipse class="usecase" cx="1060" cy="775" rx="145" ry="42"/>
+    <text class="usecase-text" x="1060" y="771">Filtrar produtos críticos</text>
+    <text class="usecase-text" x="1060" y="791">e ver alertas</text>
+    <ellipse class="usecase" cx="1060" cy="895" rx="145" ry="42"/>
+    <text class="usecase-text" x="1060" y="891">Gerar e baixar relatório</text>
+    <text class="usecase-text" x="1060" y="911">de estoque baixo (CSV)</text>
+  </g>
+
+  <path class="include" d="M1060 687 L1060 731" marker-end="url(#arrow)"/>
+  <text class="label" x="1075" y="715">limite define alertas</text>
+  <path class="include" d="M1060 817 L1060 851" marker-end="url(#arrow)"/>
+  <text class="label" x="1075" y="841">mesmo limite</text>
+</svg>

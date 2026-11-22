@@ -1,0 +1,115 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="900" viewBox="0 0 1400 900" role="img" aria-labelledby="title description">
+  <title id="title">Diagrama de classes do StoksMaster</title>
+  <desc id="description">Modelo de dados com Loja, Usuário, Produto e Movimentação de estoque e seus relacionamentos.</desc>
+  <defs>
+    <style>
+      text { font-family: Inter, "Segoe UI", Arial, sans-serif; fill: #e5eefb; }
+      .title { font-size: 30px; font-weight: 700; }
+      .subtitle { font-size: 15px; fill: #a9bad3; }
+      .class-title { font-size: 19px; font-weight: 700; }
+      .field { font-size: 15px; }
+      .stereotype { font-size: 12px; fill: #8fb4e8; }
+      .note { font-size: 13px; fill: #c3d1e5; }
+      .box { fill: #13243b; stroke: #5c86bb; stroke-width: 1.5; rx: 12; }
+      .header { fill: #1b3555; }
+      .separator { stroke: #395878; stroke-width: 1; }
+      .relation { stroke: #9ab8dc; stroke-width: 2; fill: none; }
+      .reference { stroke: #b7a5e8; stroke-width: 2; stroke-dasharray: 8 7; fill: none; }
+      .cardinality { font-size: 13px; fill: #c9d8ec; }
+      .relation-label { font-size: 13px; fill: #a9bad3; }
+    </style>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto">
+      <path d="M0,0 L10,5 L0,10 Z" fill="#9ab8dc"/>
+    </marker>
+    <marker id="reference-arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto">
+      <path d="M0,0 L10,5 L0,10 Z" fill="#b7a5e8"/>
+    </marker>
+  </defs>
+  <rect width="1400" height="900" fill="#0b1422"/>
+  <text class="title" x="56" y="58">StoksMaster · Diagrama de classes</text>
+  <text class="subtitle" x="56" y="86">Modelo persistido no backend · atributos principais e associações</text>
+
+  <path class="relation" d="M420 250 L325 350" marker-end="url(#arrow)"/>
+  <text class="cardinality" x="367" y="267">1</text>
+  <text class="cardinality" x="326" y="337">0..*</text>
+  <text class="relation-label" x="335" y="301">possui usuários</text>
+
+  <path class="relation" d="M560 250 L560 390" marker-end="url(#arrow)"/>
+  <text class="cardinality" x="570" y="270">1</text>
+  <text class="cardinality" x="570" y="380">0..*</text>
+  <text class="relation-label" x="577" y="328">mantém produtos</text>
+
+  <path class="relation" d="M850 190 L1010 350" marker-end="url(#arrow)"/>
+  <text class="cardinality" x="864" y="202">1</text>
+  <text class="cardinality" x="995" y="342">0..*</text>
+  <text class="relation-label" x="894" y="267">registra movimentações</text>
+
+  <path class="reference" d="M850 515 L1010 515" marker-end="url(#reference-arrow)"/>
+  <text class="cardinality" x="861" y="506">1</text>
+  <text class="cardinality" x="990" y="506">0..*</text>
+  <text class="relation-label" x="876" y="541">referência histórica por product_id</text>
+
+  <g transform="translate(390 120)">
+    <rect class="box" width="320" height="130"/>
+    <path class="header" d="M12 0 H308 Q320 0 320 12 V44 H0 V12 Q0 0 12 0 Z"/>
+    <text class="stereotype" x="18" y="18">«entidade»</text>
+    <text class="class-title" x="18" y="39">Store (Loja)</text>
+    <line class="separator" x1="0" y1="44" x2="320" y2="44"/>
+    <text class="field" x="18" y="70">+ id: int</text>
+    <text class="field" x="18" y="94">+ name: String</text>
+    <text class="field" x="18" y="118">+ created_at: datetime</text>
+  </g>
+
+  <g transform="translate(55 350)">
+    <rect class="box" width="340" height="210"/>
+    <path class="header" d="M12 0 H328 Q340 0 340 12 V44 H0 V12 Q0 0 12 0 Z"/>
+    <text class="stereotype" x="18" y="18">«entidade»</text>
+    <text class="class-title" x="18" y="39">User (Usuário)</text>
+    <line class="separator" x1="0" y1="44" x2="340" y2="44"/>
+    <text class="field" x="18" y="70">+ id: int</text>
+    <text class="field" x="18" y="94">+ name: String</text>
+    <text class="field" x="18" y="118">+ email: String</text>
+    <text class="field" x="18" y="142">- hashed_password: String</text>
+    <text class="field" x="18" y="166">+ store_id: int (FK)</text>
+    <text class="field" x="18" y="190">+ created_at: datetime</text>
+  </g>
+
+  <g transform="translate(400 390)">
+    <rect class="box" width="390" height="258"/>
+    <path class="header" d="M12 0 H378 Q390 0 390 12 V44 H0 V12 Q0 0 12 0 Z"/>
+    <text class="stereotype" x="18" y="18">«entidade»</text>
+    <text class="class-title" x="18" y="39">Product (Produto)</text>
+    <line class="separator" x1="0" y1="44" x2="390" y2="44"/>
+    <text class="field" x="18" y="70">+ id: int</text>
+    <text class="field" x="18" y="94">+ name: String</text>
+    <text class="field" x="18" y="118">+ image: String?</text>
+    <text class="field" x="18" y="142">+ category: String</text>
+    <text class="field" x="18" y="166">+ price: float</text>
+    <text class="field" x="18" y="190">+ quantity: int</text>
+    <text class="field" x="18" y="214">+ store_id: int (FK)</text>
+    <text class="field" x="18" y="238">+ created_at: datetime</text>
+  </g>
+
+  <g transform="translate(1010 350)">
+    <rect class="box" width="340" height="330"/>
+    <path class="header" d="M12 0 H328 Q340 0 340 12 V44 H0 V12 Q0 0 12 0 Z"/>
+    <text class="stereotype" x="18" y="18">«entidade»</text>
+    <text class="class-title" x="18" y="39">StockMovement</text>
+    <line class="separator" x1="0" y1="44" x2="340" y2="44"/>
+    <text class="field" x="18" y="70">+ id: int</text>
+    <text class="field" x="18" y="94">+ product_id: int (referência)</text>
+    <text class="field" x="18" y="118">+ product_name: String</text>
+    <text class="field" x="18" y="142">+ store_id: int (FK)</text>
+    <text class="field" x="18" y="166">+ movement_type: String</text>
+    <text class="field" x="18" y="190">+ quantity_delta: int</text>
+    <text class="field" x="18" y="214">+ quantity_before: int</text>
+    <text class="field" x="18" y="238">+ quantity_after: int</text>
+    <text class="field" x="18" y="262">+ reason: String</text>
+    <text class="field" x="18" y="286">+ created_at: datetime</text>
+  </g>
+
+  <rect x="55" y="740" width="1295" height="94" rx="12" fill="#111e30" stroke="#394f6b"/>
+  <text class="note" x="78" y="775">Nota:</text>
+  <text class="note" x="128" y="775">product_id em StockMovement é uma referência histórica sem chave estrangeira no banco;</text>
+  <text class="note" x="78" y="803">product_name guarda o nome do produto no momento da movimentação, preservando o histórico.</text>
+</svg>
