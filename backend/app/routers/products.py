@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models.user import User
-from app.schemas.product import ProductCreate, ProductOut
+from app.schemas.product import ProductCreate, ProductOut, StockMovementCreate, StockMovementOut
 from app.security import get_current_user
 from app.services.product_service import (
     create_low_stock_report,
@@ -12,6 +12,8 @@ from app.services.product_service import (
     delete_product,
     get_low_stock_products,
     get_products_by_store,
+    get_stock_movements,
+    register_stock_movement,
     update_product,
 )
 
@@ -47,6 +49,46 @@ def create_low_stock_report_route(
         media_type="text/csv",
         filename=report_path.name,
     )
+
+
+@router.get("/movements", response_model=list[StockMovementOut])
+def list_stock_movements(
+    limit: int = Query(default=100, ge=1, le=500),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    return get_stock_movements(db, current_user.store_id, limit=limit)
+
+
+@router.get("/{product_id}/movements", response_model=list[StockMovementOut])
+def list_product_stock_movements(
+    product_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    return get_stock_movements(db, current_user.store_id, product_id=product_id)
+
+
+@router.post("/{product_id}/movements", response_model=ProductOut)
+def register_product_stock_movement(
+    product_id: int,
+    movement: StockMovementCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    result = register_stock_movement(
+        db,
+        current_user.store_id,
+        product_id,
+        movement.movement_type,
+        movement.quantity,
+        movement.reason,
+    )
+    if result is None:
+        raise HTTPException(status_code=404, detail="Product not found")
+    if result is False:
+        raise HTTPException(status_code=400, detail="Quantidade invalida ou insuficiente em estoque")
+    return result
 
 
 @router.post("/", response_model=ProductOut, status_code=status.HTTP_201_CREATED)

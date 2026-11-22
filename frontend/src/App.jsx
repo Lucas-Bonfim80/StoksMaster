@@ -260,6 +260,103 @@ function ProductModal({ form, isEditing, onChange, onSubmit, onClose }) {
   )
 }
 
+function StockMovementModal({ product, onSubmit, onClose, loading, error }) {
+  const [movementType, setMovementType] = useState('entrada')
+  const [quantity, setQuantity] = useState(1)
+  const [reason, setReason] = useState('')
+
+  const handleSubmit = (event) => {
+    event.preventDefault()
+    onSubmit({
+      movement_type: movementType,
+      quantity: Number(quantity),
+      reason: reason.trim(),
+    })
+  }
+
+  return (
+    <div className="modal-backdrop" onMouseDown={onClose}>
+      <section className="product-modal" role="dialog" aria-modal="true" aria-labelledby="movement-modal-title" onMouseDown={(event) => event.stopPropagation()}>
+        <div className="modal-heading">
+          <div>
+            <p className="label">Movimentação</p>
+            <h2 id="movement-modal-title">{product.name}</h2>
+          </div>
+          <button type="button" className="modal-close" onClick={onClose} aria-label="Fechar modal">&times;</button>
+        </div>
+        <p className="movement-current">Estoque atual: <strong>{product.quantity} unidades</strong></p>
+        <form onSubmit={handleSubmit} className="product-form">
+          <div className="form-field">
+            <label htmlFor="movement-type">Tipo</label>
+            <select id="movement-type" value={movementType} onChange={(event) => setMovementType(event.target.value)}>
+              <option value="entrada">Entrada</option>
+              <option value="saida">Saída</option>
+              <option value="ajuste">Ajuste</option>
+            </select>
+          </div>
+          <div className="form-field">
+            <label htmlFor="movement-quantity">{movementType === 'ajuste' ? 'Nova quantidade' : 'Quantidade'}</label>
+            <input id="movement-quantity" type="number" min={movementType === 'ajuste' ? '0' : '1'} value={quantity} onChange={(event) => setQuantity(event.target.value)} required />
+          </div>
+          <div className="form-field">
+            <label htmlFor="movement-reason">Motivo</label>
+            <input id="movement-reason" type="text" maxLength="200" placeholder="Ex.: compra, venda, perda ou correção" value={reason} onChange={(event) => setReason(event.target.value)} required />
+          </div>
+          {error && <p className="form-error">{error}</p>}
+          <div className="modal-actions">
+            <button type="button" className="cancel-button" onClick={onClose}>Cancelar</button>
+            <button type="submit" disabled={loading}>{loading ? 'Registrando...' : 'Registrar movimentação'}</button>
+          </div>
+        </form>
+      </section>
+    </div>
+  )
+}
+
+function StockHistoryModal({ movements, product, loading, onClose }) {
+  const formatDate = (value) => new Intl.DateTimeFormat('pt-BR', {
+    dateStyle: 'short',
+    timeStyle: 'short',
+  }).format(new Date(value))
+
+  return (
+    <div className="modal-backdrop" onMouseDown={onClose}>
+      <section className="history-modal" role="dialog" aria-modal="true" aria-labelledby="history-modal-title" onMouseDown={(event) => event.stopPropagation()}>
+        <div className="modal-heading">
+          <div>
+            <p className="label">Estoque</p>
+            <h2 id="history-modal-title">{product ? `Histórico — ${product.name}` : 'Histórico da loja'}</h2>
+          </div>
+          <button type="button" className="modal-close" onClick={onClose} aria-label="Fechar modal">&times;</button>
+        </div>
+        {loading ? (
+          <p className="empty-state">Carregando histórico...</p>
+        ) : movements.length === 0 ? (
+          <p className="empty-state">Nenhuma movimentação registrada.</p>
+        ) : (
+          <div className="movement-list">
+            {movements.map((movement) => (
+              <article className="movement-item" key={movement.id}>
+                <span className={`movement-badge movement-badge-${movement.movement_type}`}>
+                  {movement.movement_type === 'entrada' ? '+' : movement.movement_type === 'saida' ? '-' : '±'}
+                </span>
+                <div className="movement-details">
+                  <div>
+                    <strong>{movement.product_name}</strong>
+                    <span>{formatDate(movement.created_at)}</span>
+                  </div>
+                  <p>{movement.reason}</p>
+                  <small>{movement.quantity_before} → {movement.quantity_after} unidades ({movement.quantity_delta > 0 ? '+' : ''}{movement.quantity_delta})</small>
+                </div>
+              </article>
+            ))}
+          </div>
+        )}
+      </section>
+    </div>
+  )
+}
+
 function DeleteConfirmationModal({ product, loading, error, onConfirm, onClose }) {
   return (
     <div className="modal-backdrop" onMouseDown={onClose}>
@@ -307,6 +404,13 @@ function App() {
   const [reportLoading, setReportLoading] = useState(false)
   const [reportMessage, setReportMessage] = useState('')
   const [reportError, setReportError] = useState('')
+  const [movementProduct, setMovementProduct] = useState(null)
+  const [movementLoading, setMovementLoading] = useState(false)
+  const [movementError, setMovementError] = useState('')
+  const [historyProduct, setHistoryProduct] = useState(null)
+  const [movements, setMovements] = useState([])
+  const [historyLoading, setHistoryLoading] = useState(false)
+  const [historyOpen, setHistoryOpen] = useState(false)
   const [sortConfig, setSortConfig] = useState({ key: 'id', direction: 'desc' })
   const [currentPage, setCurrentPage] = useState(1)
 
@@ -491,6 +595,49 @@ function App() {
     }
   }
 
+  const openMovementModal = (product) => {
+    setMovementError('')
+    setMovementProduct(product)
+  }
+
+  const handleRegisterMovement = async (movement) => {
+    setMovementLoading(true)
+    setMovementError('')
+    try {
+      await axios.post(
+        `${API_URL}/products/${movementProduct.id}/movements`,
+        movement,
+        { headers: { Authorization: `Bearer ${token}` } },
+      )
+      setMovementProduct(null)
+      await fetchProducts()
+    } catch (error) {
+      setMovementError(error.response?.data?.detail || 'Não foi possível registrar a movimentação.')
+    } finally {
+      setMovementLoading(false)
+    }
+  }
+
+  const openHistory = async (product = null) => {
+    setHistoryProduct(product)
+    setHistoryOpen(true)
+    setHistoryLoading(true)
+    try {
+      const path = product
+        ? `/products/${product.id}/movements`
+        : '/products/movements'
+      const response = await axios.get(`${API_URL}${path}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      setMovements(response.data)
+    } catch (error) {
+      console.error('Erro ao buscar histórico:', error)
+      setMovements([])
+    } finally {
+      setHistoryLoading(false)
+    }
+  }
+
   const handleSort = (key) => {
     setSortConfig((currentConfig) => {
       if (currentConfig.key === key) {
@@ -609,7 +756,10 @@ function App() {
             />
           </div>
 
-          <button type="button" className="new-product-button" onClick={openNewProductModal}>+ Novo produto</button>
+          <div className="toolbar-actions">
+            <button type="button" className="history-button" onClick={() => openHistory()}>Histórico</button>
+            <button type="button" className="new-product-button" onClick={openNewProductModal}>+ Novo produto</button>
+          </div>
         </div>
         <section className={`stock-alert ${lowStockProducts.length > 0 ? 'stock-alert-warning' : 'stock-alert-ok'}`} aria-live="polite">
           <div className="stock-alert-copy">
@@ -712,6 +862,12 @@ function App() {
                         <td>R$ {Number(product.price).toFixed(2)}</td>
                         <td>
                           <div className="table-actions">
+                            <button type="button" aria-label={`Movimentar ${product.name}`} className="table-action table-action-stock" onClick={() => openMovementModal(product)}>
+                              ±
+                            </button>
+                            <button type="button" aria-label={`Ver histórico de ${product.name}`} className="table-action table-action-history" onClick={() => openHistory(product)}>
+                              ↺
+                            </button>
                             <button type="button" aria-label={`Editar ${product.name}`} className="table-action table-action-edit" onClick={() => openEditModal(product)}>
                               <img src="https://img.icons8.com/?size=100&id=11762&format=png&color=eaeaea" alt="" />
                             </button>
@@ -751,6 +907,23 @@ function App() {
           onChange={handleChange}
           onSubmit={handleSubmit}
           onClose={closeProductModal}
+        />
+      )}
+      {movementProduct && (
+        <StockMovementModal
+          product={movementProduct}
+          onSubmit={handleRegisterMovement}
+          onClose={() => setMovementProduct(null)}
+          loading={movementLoading}
+          error={movementError}
+        />
+      )}
+      {historyOpen && (
+        <StockHistoryModal
+          movements={movements}
+          product={historyProduct}
+          loading={historyLoading}
+          onClose={() => setHistoryOpen(false)}
         />
       )}
       {productToDelete && (

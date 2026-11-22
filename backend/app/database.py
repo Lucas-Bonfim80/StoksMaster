@@ -36,7 +36,7 @@ def create_database_if_needed():
 
 def init_db():
     create_database_if_needed()
-    from app.models import Product, Store, User  # noqa: F401
+    from app.models import Product, StockMovement, Store, User  # noqa: F401
 
     Base.metadata.create_all(bind=engine)
     if "category" not in {column["name"] for column in inspect(engine).get_columns("products")}:

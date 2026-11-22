@@ -5,6 +5,7 @@ from pathlib import Path
 from sqlalchemy.orm import Session
 
 from app.models.product import Product
+from app.models.stock_movement import StockMovement
 from app.schemas.product import ProductCreate
 
 
@@ -34,7 +35,7 @@ def create_low_stock_report(db: Session, store_id: int, threshold: int) -> Path:
     with report_path.open("w", newline="", encoding="utf-8-sig") as report_file:
         writer = csv.writer(report_file)
         writer.writerow(["Relatorio de produtos com estoque baixo"])
-        writer.writerow(["Gerado em ", generated_at.strftime("%d/%m/%Y %H:%M:%S %z")])
+        writer.writerow(["Gerado em '", generated_at.strftime("%d/%m/%Y %H:%M:%S %z")])
         writer.writerow(["Limite de estoque", threshold])
         writer.writerow([])
         writer.writerow(["Produto", "Quantidade"])
@@ -59,6 +60,18 @@ def create_product(db: Session, store_id: int, product: ProductCreate):
     db.add(db_product)
     db.commit()
     db.refresh(db_product)
+    if db_product.quantity > 0:
+        db.add(StockMovement(
+            product_id=db_product.id,
+            product_name=db_product.name,
+            store_id=store_id,
+            movement_type="entrada",
+            quantity_delta=db_product.quantity,
+            quantity_before=0,
+            quantity_after=db_product.quantity,
+            reason="Cadastro inicial do produto",
+        ))
+        db.commit()
     return db_product
 
 
@@ -66,7 +79,10 @@ def update_product(db: Session, store_id: int, product_id: int, product: Product
     db_product = db.query(Product).filter(Product.id == product_id, Product.store_id == store_id).first()
     if db_product is None:
         return None
+    if quantity < 0 or (movement_type in ("entrada", "saida") and quantity == 0):
+        return False
 
+    quantity_before = db_product.quantity
     db_product.name = product.name
     db_product.image = product.image
     db_product.category = product.category
@@ -75,7 +91,68 @@ def update_product(db: Session, store_id: int, product_id: int, product: Product
 
     db.commit()
     db.refresh(db_product)
+    if quantity_before != db_product.quantity:
+        quantity_delta = db_product.quantity - quantity_before
+        db.add(StockMovement(
+            product_id=db_product.id,
+            product_name=db_product.name,
+            store_id=store_id,
+            movement_type="entrada" if quantity_delta > 0 else "ajuste",
+            quantity_delta=quantity_delta,
+            quantity_before=quantity_before,
+            quantity_after=db_product.quantity,
+            reason="Quantidade alterada na edição do produto",
+        ))
+        db.commit()
     return db_product
+
+
+def register_stock_movement(
+    db: Session,
+    store_id: int,
+    product_id: int,
+    movement_type: str,
+    quantity: int,
+    reason: str,
+):
+    db_product = db.query(Product).filter(Product.id == product_id, Product.store_id == store_id).first()
+    if db_product is None:
+        return None
+
+    quantity_before = db_product.quantity
+    if movement_type == "entrada":
+        quantity_delta = quantity
+        quantity_after = quantity_before + quantity
+    elif movement_type == "saida":
+        if quantity > quantity_before:
+            return False
+        quantity_delta = -quantity
+        quantity_after = quantity_before - quantity
+    else:
+        quantity_delta = quantity - quantity_before
+        quantity_after = quantity
+
+    db_product.quantity = quantity_after
+    db.add(StockMovement(
+        product_id=db_product.id,
+        product_name=db_product.name,
+        store_id=store_id,
+        movement_type=movement_type,
+        quantity_delta=quantity_delta,
+        quantity_before=quantity_before,
+        quantity_after=quantity_after,
+        reason=reason,
+    ))
+    db.commit()
+    db.refresh(db_product)
+    return db_product
+
+
+def get_stock_movements(db: Session, store_id: int, product_id: int | None = None, limit: int = 100):
+    query = db.query(StockMovement).filter(StockMovement.store_id == store_id)
+    if product_id is not None:
+        query = query.filter(StockMovement.product_id == product_id)
+    return query.order_by(StockMovement.created_at.desc(), StockMovement.id.desc()).limit(limit).all()
 
 
 def delete_product(db: Session, store_id: int, product_id: int):

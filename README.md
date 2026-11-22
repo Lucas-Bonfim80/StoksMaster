@@ -136,6 +136,9 @@ Authorization: Bearer SEU_TOKEN
 | GET | `/products/` | Lista produtos da loja atual |
 | GET | `/products/low-stock?threshold=5` | Lista produtos com quantidade menor ou igual ao limite informado |
 | POST | `/products/low-stock/report?threshold=5` | Gera e baixa um CSV dos produtos no limite ou abaixo dele |
+| GET | `/products/movements?limit=100` | Lista o histórico de movimentações da loja |
+| GET | `/products/{product_id}/movements` | Lista o histórico de um produto |
+| POST | `/products/{product_id}/movements` | Registra entrada, saída ou ajuste de estoque |
 | POST | `/products/` | Cria produto |
 | PUT | `/products/{product_id}` | Atualiza produto |
 | DELETE | `/products/{product_id}` | Exclui produto |
